@@ -66,22 +66,24 @@ function renderProjects() {
     
     const localImages = {
         '北滘蚬华': '蚬华项目.jpg',
-        '三水昊通': '三水项目.jpg'
+        '三水昊通': '三水项目.jpg',
+        '鄱阳星引力': '鄱阳星引力项目.jpg',
+        '湖南德科': '湖南德科项目.jpg'
     };
     
     container.innerHTML = projects.map(p => {
         const localImage = localImages[p.name];
+        let bgStyle = '';
+        
+        if (localImage) {
+            bgStyle = `style="background-image: url('${localImage}'); background-size: cover; background-position: center;"`;
+        } else if (p.image) {
+            bgStyle = `style="background-image: url('/uploads/${p.id}/image/${p.image}'); background-size: cover; background-position: center;"`;
+        }
+        
         return `
-        <div class="project-card ${localImage ? 'has-bg-image' : ''}" onclick="openProject('${p.id}')" ${localImage ? `style="background-image: url('${localImage}'); background-size: cover; background-position: center;"` : ''}>
-            <div class="project-icon">
-                ${p.image ? `
-                    <img src="/uploads/${p.id}/image/${p.image}" alt="${escapeHtml(p.name)}">
-                ` : localImage ? '' : `
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                `}
-            </div>
+        <div class="project-card ${localImage || p.image ? 'has-bg-image' : ''}" onclick="openProject('${p.id}')" ${bgStyle}>
+            <div class="project-icon"></div>
             <div class="project-name">${escapeHtml(p.name)}</div>
             <div class="project-description">${escapeHtml(p.description || '暂无描述')}</div>
             <div class="project-meta">

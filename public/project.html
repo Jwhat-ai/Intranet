@@ -249,7 +249,10 @@
     <div class="files-section">
         <div class="files-header">
             <h2>项目文件</h2>
-            <button class="btn-add" onclick="exportAllFiles()">导出全部文件</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-add" onclick="createFolder()">新建文件夹</button>
+                <button class="btn-add" onclick="exportAllFiles()">导出全部文件</button>
+            </div>
         </div>
         
         <div class="upload-area" id="uploadArea">
@@ -300,9 +303,11 @@
             }
         }
         
+        let currentPath = '';
+        
         async function loadFiles() {
             try {
-                const response = await fetch(`/api/projects/${projectId}/files`);
+                const response = await fetch(`/api/projects/${projectId}/files?path=${encodeURIComponent(currentPath)}`);
                 const files = await response.json();
                 renderFiles(files);
             } catch (error) {
@@ -327,23 +332,40 @@
             }
             
             container.innerHTML = files.map(file => {
-                const iconClass = getFileIconClass(file.type);
-                const isImage = ['.png', '.jpg', '.jpeg', '.gif'].includes(file.type);
-                
-                return `
-                    <div class="file-card">
-                        ${isImage ? `<img src="/uploads/${projectId}/${encodeURIComponent(file.name)}" class="file-preview" alt="${escapeHtml(file.name)}">` : ''}
-                        <div class="file-icon ${iconClass}">
-                            ${getFileIcon(file.type)}
+                if (file.isDirectory) {
+                    return `
+                        <div class="file-card" onclick="navigateToPath('${file.path}')">
+                            <div class="file-icon" style="background: #dbeafe;">
+                                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#3b82f6" stroke-width="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </div>
+                            <div class="file-name">${escapeHtml(file.name)}</div>
+                            <div class="file-size">文件夹</div>
+                            <div class="file-actions" onclick="event.stopPropagation()">
+                                <button class="delete" onclick="deleteFile('${encodeURIComponent(file.name)}')">删除</button>
+                            </div>
                         </div>
-                        <div class="file-name">${escapeHtml(file.name)}</div>
-                        <div class="file-size">${formatFileSize(file.size)}</div>
-                        <div class="file-actions">
-                            <button onclick="downloadFile('${encodeURIComponent(file.name)}')">下载</button>
-                            <button class="delete" onclick="deleteFile('${encodeURIComponent(file.name)}')">删除</button>
+                    `;
+                } else {
+                    const iconClass = getFileIconClass(file.type);
+                    const isImage = ['.png', '.jpg', '.jpeg', '.gif'].includes(file.type);
+                    
+                    return `
+                        <div class="file-card" onclick="openFileInNewTab('${encodeURIComponent(file.name)}')">
+                            ${isImage ? `<img src="/uploads/${projectId}/${encodeURIComponent(file.path)}" class="file-preview" alt="${escapeHtml(file.name)}">` : ''}
+                            <div class="file-icon ${iconClass}">
+                                ${getFileIcon(file.type)}
+                            </div>
+                            <div class="file-name">${escapeHtml(file.name)}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                            <div class="file-actions" onclick="event.stopPropagation()">
+                                <button onclick="downloadFile('${encodeURIComponent(file.name)}')">下载</button>
+                                <button class="delete" onclick="deleteFile('${encodeURIComponent(file.name)}')">删除</button>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }).join('');
         }
         
@@ -403,9 +425,44 @@
             if (files.length === 0) return;
             
             const formData = new FormData();
+            let hasPasswordFiles = false;
+            
+            // 检查是否有文件需要设置密码
             for (const file of files) {
-                formData.append('files', file);
+                const setPassword = confirm(`是否为文件 "${file.name}" 设置访问密码？`);
+                if (setPassword) {
+                    hasPasswordFiles = true;
+                    break;
+                }
             }
+            
+            // 如果有文件需要设置密码，验证管理员密码
+            let isAdmin = true;
+            if (hasPasswordFiles) {
+                isAdmin = await verifyAdmin();
+                if (!isAdmin) {
+                    alert('管理员密码验证失败，无法设置文件密码');
+                    return;
+                }
+            }
+            
+            // 重新遍历文件，设置密码
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                formData.append('files', file);
+                
+                // 询问是否设置密码
+                const setPassword = confirm(`是否为文件 "${file.name}" 设置访问密码？`);
+                if (setPassword) {
+                    const password = prompt('请输入文件密码:');
+                    formData.append('passwords', password || '');
+                } else {
+                    formData.append('passwords', '');
+                }
+            }
+            
+            // 添加当前路径
+            formData.append('path', currentPath);
             
             try {
                 const response = await fetch(`/api/projects/${projectId}/upload`, {
@@ -426,15 +483,72 @@
             }
         }
         
-        function downloadFile(filename) {
-            window.location.href = `/api/projects/${projectId}/download/${filename}`;
+        async function verifyAdmin() {
+            const adminPassword = prompt('请输入管理员密码:');
+            if (!adminPassword) return false;
+            
+            try {
+                const response = await fetch('/api/admin/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: adminPassword })
+                });
+                
+                const data = await response.json();
+                return data.success;
+            } catch (error) {
+                console.error('管理员验证失败:', error);
+                return false;
+            }
+        }
+        
+        async function downloadFile(filename) {
+            const fullPath = currentPath ? `${currentPath}/${filename}` : filename;
+            try {
+                const response = await fetch(`/api/projects/${projectId}/download/${filename}?path=${encodeURIComponent(currentPath)}`);
+                if (response.status === 401) {
+                    // 需要密码
+                    const password = prompt('此文件需要密码，请输入:');
+                    if (password) {
+                        window.location.href = `/api/projects/${projectId}/download/${filename}?path=${encodeURIComponent(currentPath)}&password=${encodeURIComponent(password)}`;
+                    }
+                } else if (response.ok) {
+                    // 不需要密码，直接下载
+                    window.location.href = `/api/projects/${projectId}/download/${filename}?path=${encodeURIComponent(currentPath)}`;
+                } else {
+                    alert('文件不存在或访问失败');
+                }
+            } catch (error) {
+                console.error('下载失败:', error);
+            }
+        }
+        
+        async function openFileInNewTab(filename) {
+            const fullPath = currentPath ? `${currentPath}/${filename}` : filename;
+            try {
+                const response = await fetch(`/uploads/${projectId}/${fullPath}`);
+                if (response.status === 401) {
+                    // 需要密码
+                    const password = prompt('此文件需要密码，请输入:');
+                    if (password) {
+                        window.open(`/uploads/${projectId}/${fullPath}?password=${encodeURIComponent(password)}`, '_blank');
+                    }
+                } else if (response.ok) {
+                    // 不需要密码，直接打开
+                    window.open(`/uploads/${projectId}/${fullPath}`, '_blank');
+                } else {
+                    alert('文件不存在或访问失败');
+                }
+            } catch (error) {
+                console.error('打开文件失败:', error);
+            }
         }
         
         async function deleteFile(filename) {
             if (!confirm('确定要删除此文件吗？')) return;
             
             try {
-                await fetch(`/api/projects/${projectId}/files/${filename}`, { method: 'DELETE' });
+                await fetch(`/api/projects/${projectId}/files/${filename}?path=${encodeURIComponent(currentPath)}`, { method: 'DELETE' });
                 loadFiles();
             } catch (error) {
                 console.error('删除文件失败:', error);
@@ -457,6 +571,34 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        function navigateToPath(path) {
+            currentPath = path;
+            loadFiles();
+        }
+        
+        async function createFolder() {
+            const folderName = prompt('请输入文件夹名称:');
+            if (!folderName) return;
+            
+            try {
+                const response = await fetch(`/api/projects/${projectId}/create-folder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folderName, parentPath: currentPath })
+                });
+                
+                if (response.ok) {
+                    loadFiles();
+                } else {
+                    const error = await response.json();
+                    alert('创建文件夹失败: ' + (error.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('创建文件夹失败:', error);
+                alert('创建文件夹失败，请重试');
+            }
         }
     </script>
 </body>

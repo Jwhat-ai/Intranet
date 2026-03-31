@@ -2,6 +2,7 @@ import os
 import json
 import zipfile
 import io
+import hashlib
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 from werkzeug.utils import secure_filename
@@ -51,6 +52,30 @@ def read_json(filepath):
 def write_json(filepath, data):
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(hashed_password, password):
+    return hashlib.sha256(password.encode()).hexdigest() == hashed_password
+
+# 密码存储文件
+PASSWORD_FILE = os.path.join(DATA_DIR, 'file_passwords.json')
+
+if not os.path.exists(PASSWORD_FILE):
+    write_json(PASSWORD_FILE, {})
+
+# 管理员密码（可以在生产环境中改为从环境变量或配置文件读取）
+ADMIN_PASSWORD = 'admin123'  # 默认管理员密码
+
+@app.route('/api/admin/verify', methods=['POST'])
+def verify_admin():
+    data = request.get_json()
+    password = data.get('password')
+    
+    if password == ADMIN_PASSWORD:
+        return jsonify({'success': True})
+    return jsonify({'success': False}), 401
 
 def extract_text_from_file(filepath):
     ext = os.path.splitext(filepath)[1].lower()
@@ -166,17 +191,22 @@ def delete_project(project_id):
 @app.route('/api/projects/<project_id>/files', methods=['GET'])
 def get_files(project_id):
     project_dir = os.path.join(UPLOADS_DIR, project_id)
-    if not os.path.exists(project_dir):
+    path = request.args.get('path', '')
+    target_dir = os.path.join(project_dir, path)
+    
+    if not os.path.exists(target_dir):
         return jsonify([])
     files = []
-    for filename in os.listdir(project_dir):
-        filepath = os.path.join(project_dir, filename)
+    for filename in os.listdir(target_dir):
+        filepath = os.path.join(target_dir, filename)
         stat = os.stat(filepath)
         files.append({
             'name': filename,
             'size': stat.st_size,
             'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            'type': os.path.splitext(filename)[1].lower()
+            'type': os.path.splitext(filename)[1].lower(),
+            'isDirectory': os.path.isdir(filepath),
+            'path': os.path.join(path, filename)
         })
     return jsonify(files)
 
@@ -186,16 +216,32 @@ def upload_files(project_id):
         return jsonify({'error': 'No files'}), 400
     
     project_dir = os.path.join(UPLOADS_DIR, project_id)
-    os.makedirs(project_dir, exist_ok=True)
+    path = request.form.get('path', '')
+    target_dir = os.path.join(project_dir, path)
+    os.makedirs(target_dir, exist_ok=True)
     
     files = request.files.getlist('files')
+    passwords = request.form.getlist('passwords')
     uploaded = []
-    for file in files:
+    
+    # 读取密码存储
+    passwords_data = read_json(PASSWORD_FILE)
+    
+    for i, file in enumerate(files):
         if file and allowed_file(file.filename):
             filename = file.filename
-            filepath = os.path.join(project_dir, filename)
+            filepath = os.path.join(target_dir, filename)
             file.save(filepath)
             uploaded.append(filename)
+            
+            # 处理密码
+            if i < len(passwords) and passwords[i]:
+                file_key = f"{project_id}/{os.path.join(path, filename)}"
+                passwords_data[file_key] = hash_password(passwords[i])
+    
+    # 保存密码
+    if passwords_data:
+        write_json(PASSWORD_FILE, passwords_data)
     
     # 上传完成后更新知识库
     if uploaded:
@@ -208,18 +254,60 @@ def upload_files(project_id):
 
 @app.route('/api/projects/<project_id>/files/<filename>', methods=['DELETE'])
 def delete_file(project_id, filename):
-    filepath = os.path.join(UPLOADS_DIR, project_id, filename)
+    path = request.args.get('path', '')
+    filepath = os.path.join(UPLOADS_DIR, project_id, path, filename)
     if os.path.exists(filepath):
-        os.remove(filepath)
+        if os.path.isdir(filepath):
+            import shutil
+            shutil.rmtree(filepath)
+        else:
+            os.remove(filepath)
+            
+            # 删除密码
+            passwords_data = read_json(PASSWORD_FILE)
+            file_key = f"{project_id}/{os.path.join(path, filename)}"
+            if file_key in passwords_data:
+                del passwords_data[file_key]
+                write_json(PASSWORD_FILE, passwords_data)
+        
         return jsonify({'success': True})
     return jsonify({'error': 'File not found'}), 404
 
+@app.route('/api/projects/<project_id>/create-folder', methods=['POST'])
+def create_folder(project_id):
+    data = request.get_json()
+    folder_name = data.get('folderName')
+    parent_path = data.get('parentPath', '')
+    
+    if not folder_name:
+        return jsonify({'error': 'Folder name is required'}), 400
+    
+    project_dir = os.path.join(UPLOADS_DIR, project_id)
+    folder_path = os.path.join(project_dir, parent_path, folder_name)
+    
+    try:
+        os.makedirs(folder_path, exist_ok=True)
+        return jsonify({'success': True, 'path': os.path.join(parent_path, folder_name)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/projects/<project_id>/download/<filename>')
 def download_file(project_id, filename):
-    filepath = os.path.join(UPLOADS_DIR, project_id, filename)
-    if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True, download_name=filename)
-    return jsonify({'error': 'File not found'}), 404
+    path = request.args.get('path', '')
+    filepath = os.path.join(UPLOADS_DIR, project_id, path, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': 'File not found'}), 404
+    
+    # 检查密码
+    passwords_data = read_json(PASSWORD_FILE)
+    file_key = f"{project_id}/{os.path.join(path, filename)}"
+    
+    if file_key in passwords_data:
+        password = request.args.get('password')
+        if not password or not verify_password(passwords_data[file_key], password):
+            return jsonify({'error': 'Password required'}), 401
+    
+    return send_file(filepath, as_attachment=True, download_name=filename)
 
 @app.route('/api/projects/<project_id>/export')
 def export_project(project_id):
@@ -313,6 +401,19 @@ def knowledge_update():
 
 @app.route('/uploads/<project_id>/<filename>')
 def serve_upload(project_id, filename):
+    filepath = os.path.join(UPLOADS_DIR, project_id, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': 'File not found'}), 404
+    
+    # 检查密码
+    passwords_data = read_json(PASSWORD_FILE)
+    file_key = f"{project_id}/{filename}"
+    
+    if file_key in passwords_data:
+        password = request.args.get('password')
+        if not password or not verify_password(passwords_data[file_key], password):
+            return jsonify({'error': 'Password required'}), 401
+    
     return send_from_directory(os.path.join(UPLOADS_DIR, project_id), filename)
 
 @app.route('/uploads/<project_id>/image/<filename>')
