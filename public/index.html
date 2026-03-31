@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公司内部门户</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica, sans-serif;
+            background: linear-gradient(113.9deg, #5a8026 -41.86%, #292824 15.66%, #36343b 111.52%, #39363d 111.52%);
+            min-height: 100vh;
+            color: #ffffff;
+            position: relative;
+            overflow: auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 20px 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .logo {
+            background: transparent;
+            border-radius: 12px;
+            padding: 0;
+        }
+        
+        .company-info h1 {
+            font-size: 3rem;
+            font-weight: 500;
+            letter-spacing: 0;
+            line-height: 1.1;
+        }
+        
+        .tagline {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        
+        .search-section {
+            flex: 1;
+            max-width: 500px;
+        }
+        
+        .search-box {
+            display: flex;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-box input {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            font-size: 1rem;
+            outline: none;
+            background: transparent;
+            color: white;
+        }
+        
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-box button {
+            background: linear-gradient(135deg, #5a8026 0%, #7caf3e 100%);
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .search-box button:hover {
+            background: linear-gradient(135deg, #7caf3e 0%, #5a8026 100%);
+            transform: translateY(-2px);
+        }
+        
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+        
+        .hero-section {
+            margin-bottom: 60px;
+        }
+        
+        .hero-content {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .hero-text {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .hero-text h1 {
+            font-size: 4rem;
+            font-weight: 500;
+            line-height: 1.1;
+            margin-bottom: 32px;
+            color: #ffffff;
+        }
+        
+        .hero-text p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #d4d4d8;
+            margin-bottom: 40px;
+            max-width: 776px;
+        }
+        
+        .hero-images {
+            position: relative;
+            width: 852px;
+            height: 500px;
+        }
+        
+        .hero-image-card {
+            position: absolute;
+            outline: 16px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            width: 600px;
+            height: 350px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            backdrop-filter: blur(10px);
+            filter: drop-shadow(0px 4px 80px rgba(0, 0, 0, 0.54));
+            overflow: hidden;
+        }
+        
+        .hero-image-card.card-1 {
+            top: 100px;
+            right: -100px;
+            opacity: 0.4;
+            background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=standalone%20energy%20storage%20power%20station%20with%20battery%20modules%2C%20green%20and%20blue%20color%20scheme%2C%20modern%20design%2C%20minimalist%20style%2C%20professional%20photography&image_size=landscape_16_9');
+        }
+        
+        .hero-image-card.card-2 {
+            top: 50px;
+            left: 50px;
+            background-image: url('https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20solar%20power%20plant%20with%20solar%20panels%20in%20a%20field%2C%20green%20and%20blue%20color%20scheme%2C%20minimalist%20style%2C%20clean%20lines%2C%20professional%20photography&image_size=landscape_16_9');
+        }
+        
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(90, 128, 38, 0.2) 0%, rgba(41, 40, 36, 0.5) 100%);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h2 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #5a8026 0%, #7caf3e 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-add:hover {
+            background: linear-gradient(135deg, #7caf3e 0%, #5a8026 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(90, 128, 38, 0.4);
+        }
+        
+        .announcements-section {
+            margin-bottom: 40px;
+        }
+        
+        .announcements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .announcement-item {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #7caf3e;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
+            animation: float 6s ease-in-out infinite;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(124, 175, 62, 0.3);
+        }
+        
+        .announcement-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 25px rgba(90, 128, 38, 0.4);
+        }
+        
+        .announcement-item.high-priority {
+            border-left-color: #ef4444;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(255, 255, 255, 0.15) 20%);
+            animation: float 4s ease-in-out infinite;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .announcement-item.high-priority:hover {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.25) 0%, rgba(255, 255, 255, 0.2) 20%);
+        }
+        
+        .announcement-item:nth-child(even) {
+            animation-delay: 1s;
+        }
+        
+        .announcement-item:nth-child(3n) {
+            animation-delay: 2s;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-5px) rotate(0.5deg);
+            }
+            50% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            75% {
+                transform: translateY(5px) rotate(-0.5deg);
+            }
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+        
+        .announcement-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .announcement-icon {
+            font-size: 1.2rem;
+        }
+        
+        .announcement-item.high-priority .announcement-icon {
+            color: #ef4444;
+        }
+        
+        .announcement-text {
+            font-size: 1rem;
+        }
+        
+        .announcement-date {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .announcement-actions button {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+        
+        .announcement-actions button:hover {
+            color: #ef4444;
+        }
+        
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .project-card.has-bg-image {
+            position: relative;
+        }
+        
+        .project-card.has-bg-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            z-index: 0;
+        }
+        
+        .project-card.has-bg-image > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .project-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px solid transparent;
+            backdrop-filter: blur(10px);
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(90, 128, 38, 0.3);
+            border-color: #7caf3e;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .project-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .project-icon svg {
+            color: white;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .project-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .project-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        
+        .project-description {
+            font-size: 0.9rem;
+            color: #d4d4d8;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        
+        .project-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+        
+        .file-count {
+            font-size: 0.85rem;
+            color: #d4d4d8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .project-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .project-actions button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            color: #ffffff;
+        }
+        
+        .project-actions button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .project-actions button.delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow: auto;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-header h3 {
+            font-size: 1.2rem;
+            color: #ffffff;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #d4d4d8;
+            transition: color 0.2s;
+        }
+        
+        .btn-close:hover {
+            color: #ffffff;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #ffffff;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #7caf3e;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #5a8026 0%, #7caf3e 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(90, 128, 38, 0.4);
+        }
+        
+        .search-results-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .search-results-modal .modal-content {
+            max-width: 900px;
+            max-height: 85vh;
+            border: 2px solid rgba(124, 175, 62, 0.3);
+        }
+        
+        .search-results-list {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .search-result-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(124, 175, 62, 0.5);
+            box-shadow: 0 4px 15px rgba(90, 128, 38, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .result-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .result-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .result-details h4 {
+            font-size: 0.95rem;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .result-details p {
+            font-size: 0.8rem;
+            color: #d4d4d8;
+        }
+        
+        .match-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: rgba(124, 175, 62, 0.3);
+            color: #7caf3e;
+        }
+        
+        .result-actions button {
+            background: linear-gradient(135deg, #5a8026 0%, #7caf3e 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .result-actions button:hover {
+            background: linear-gradient(135deg, #7caf3e 0%, #5a8026 100%);
+            transform: translateY(-2px);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .search-section {
+                width: 100%;
+                max-width: none;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="logo.png" alt="Logo" width="90" height="90">
+                </div>
+                <div class="company-info">
+                    <h1>广东新信德节能环保有限公司</h1>
+                    <p class="tagline">企业内部协作平台</p>
+                </div>
+            </div>
+            <div class="search-section">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索文件内容或文件名...">
+                    <button onclick="performSearch()">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="announcements-section">
+            <div class="section-header">
+                <h2>重要提醒</h2>
+                <button class="btn-add" onclick="showAddAnnouncementModal()">+ 添加提醒</button>
+            </div>
+            <div id="announcementsList" class="announcements-list"></div>
+        </section>
+
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>New Era Energy</h1>
+                    <p>I craft a modern, sustainable energy experience for the New Energy website, featuring high-quality images of renewable tech, a minimalistic green and white color scheme, and well-organized sections showcasing services and our commitment to a greener future.</p>
+                </div>
+                <div class="hero-images">
+                    <div class="hero-image-card card-1">
+                        <div class="image-overlay"></div>
+                    </div>
+                    <div class="hero-image-card card-2">
+                        <div class="image-overlay"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="projects-section">
+            <div class="section-header">
+                <h2>项目文件夹</h2>
+                <button class="btn-add" onclick="showAddProjectModal()">+ 新建项目</button>
+            </div>
+            <div id="projectsList" class="projects-grid"></div>
+        </section>
+    </main>
+
+    <div id="searchResults" class="search-results-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>搜索结果</h3>
+                <button class="btn-close" onclick="closeSearchResults()">&times;</button>
+            </div>
+            <div id="searchResultsList" class="search-results-list"></div>
+        </div>
+    </div>
+
+    <div id="addProjectModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新建项目文件夹</h3>
+                <button class="btn-close" onclick="closeAddProjectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>项目名称</label>
+                    <input type="text" id="projectName" placeholder="输入项目名称">
+                </div>
+                <div class="form-group">
+                    <label>项目描述</label>
+                    <textarea id="projectDescription" placeholder="输入项目描述（可选）"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>项目图片</label>
+                    <div class="upload-area" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;">
+                        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p>点击或拖拽上传项目图片</p>
+                        <p style="font-size: 0.85rem; color: #94a3b8;">支持: PNG, JPG, GIF</p>
+                        <input type="file" id="projectImage" accept=".png,.jpg,.jpeg,.gif" style="display: none;">
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="createProject()">创建项目</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addAnnouncementModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加重要提醒</h3>
+                <button class="btn-close" onclick="closeAddAnnouncementModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>提醒内容</label>
+                    <textarea id="announcementContent" placeholder="输入提醒内容"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>优先级</label>
+                    <select id="announcementPriority">
+                        <option value="high">高</option>
+                        <option value="normal">普通</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="createAnnouncement()">添加提醒</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

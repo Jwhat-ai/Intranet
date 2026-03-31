@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目文件 - 公司内部门户</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica, sans-serif;
+            background: linear-gradient(113.9deg, #5a8026 -41.86%, #292824 15.66%, #36343b 111.52%, #39363d 111.52%);
+            min-height: 100vh;
+            color: #ffffff;
+            position: relative;
+            overflow: auto;
+        }
+        
+        .btn-add {
+            background: linear-gradient(135deg, #5a8026 0%, #7caf3e 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        
+        .btn-add:hover {
+            background: linear-gradient(135deg, #7caf3e 0%, #5a8026 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(90, 128, 38, 0.4);
+        }
+        
+        .section-header h2 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        
+        .files-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .project-header {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 30px 40px;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .project-header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 15px;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+        
+        .back-link:hover {
+            opacity: 1;
+        }
+        
+        .project-title {
+            font-size: 3rem;
+            font-weight: 500;
+            line-height: 1.1;
+            margin-bottom: 8px;
+        }
+        
+        .project-description-header {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .files-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+        
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #7caf3e;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .upload-area p {
+            color: #d4d4d8;
+        }
+        
+        .upload-area svg {
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        
+        .upload-area p {
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+        
+        .upload-area input {
+            display: none;
+        }
+        
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .file-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        
+        .file-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(90, 128, 38, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .file-icon.pdf { background: #fee2e2; }
+        .file-icon.doc { background: #dbeafe; }
+        .file-icon.xls { background: #d1fae5; }
+        .file-icon.image { background: #fef3c7; }
+        .file-icon.txt { background: #e0e7ff; }
+        
+        .file-name {
+            font-size: 0.9rem;
+            color: #ffffff;
+            margin-bottom: 8px;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        
+        .file-size {
+            font-size: 0.8rem;
+            color: #d4d4d8;
+        }
+        
+        .file-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .file-actions button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            color: #ffffff;
+        }
+        
+        .file-actions button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .file-actions button.delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        
+        .file-preview {
+            width: 100%;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #888;
+        }
+        
+        .empty-state svg {
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="project-header">
+        <div class="project-header-content">
+            <a href="index.html" class="back-link">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                返回首页
+            </a>
+            <h1 class="project-title" id="projectTitle">项目名称</h1>
+            <p class="project-description-header" id="projectDesc">项目描述</p>
+        </div>
+    </div>
+    
+    <div class="files-section">
+        <div class="files-header">
+            <h2>项目文件</h2>
+            <button class="btn-add" onclick="exportAllFiles()">导出全部文件</button>
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p>拖拽文件到此处上传，或点击选择文件</p>
+            <p style="font-size: 0.85rem; color: #94a3b8;">支持: PDF, Word, Excel, 图片, 文本文件</p>
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt">
+        </div>
+        
+        <div id="filesList" class="files-grid"></div>
+    </div>
+    
+    <script>
+        let projectId = null;
+        let projectInfo = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            projectId = params.get('id');
+            
+            if (!projectId) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            loadProjectInfo();
+            loadFiles();
+            setupUpload();
+        });
+        
+        async function loadProjectInfo() {
+            try {
+                const response = await fetch('/api/projects');
+                const projects = await response.json();
+                projectInfo = projects.find(p => p.id === projectId);
+                
+                if (projectInfo) {
+                    document.getElementById('projectTitle').textContent = projectInfo.name;
+                    document.getElementById('projectDesc').textContent = projectInfo.description || '暂无描述';
+                    document.title = `${projectInfo.name} - 公司内部门户`;
+                }
+            } catch (error) {
+                console.error('加载项目信息失败:', error);
+            }
+        }
+        
+        async function loadFiles() {
+            try {
+                const response = await fetch(`/api/projects/${projectId}/files`);
+                const files = await response.json();
+                renderFiles(files);
+            } catch (error) {
+                console.error('加载文件失败:', error);
+            }
+        }
+        
+        function renderFiles(files) {
+            const container = document.getElementById('filesList');
+            
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <p>暂无文件，上传第一个文件吧</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = files.map(file => {
+                const iconClass = getFileIconClass(file.type);
+                const isImage = ['.png', '.jpg', '.jpeg', '.gif'].includes(file.type);
+                
+                return `
+                    <div class="file-card">
+                        ${isImage ? `<img src="/uploads/${projectId}/${encodeURIComponent(file.name)}" class="file-preview" alt="${escapeHtml(file.name)}">` : ''}
+                        <div class="file-icon ${iconClass}">
+                            ${getFileIcon(file.type)}
+                        </div>
+                        <div class="file-name">${escapeHtml(file.name)}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                        <div class="file-actions">
+                            <button onclick="downloadFile('${encodeURIComponent(file.name)}')">下载</button>
+                            <button class="delete" onclick="deleteFile('${encodeURIComponent(file.name)}')">删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getFileIconClass(ext) {
+            if (ext === '.pdf') return 'pdf';
+            if (['.doc', '.docx'].includes(ext)) return 'doc';
+            if (['.xls', '.xlsx'].includes(ext)) return 'xls';
+            if (['.png', '.jpg', '.jpeg', '.gif'].includes(ext)) return 'image';
+            return 'txt';
+        }
+        
+        function getFileIcon(ext) {
+            const colors = {
+                pdf: '#ef4444',
+                doc: '#3b82f6',
+                xls: '#10b981',
+                image: '#f59e0b',
+                txt: '#6366f1'
+            };
+            const color = colors[getFileIconClass(ext)] || '#6366f1';
+            
+            return `
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="${color}" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+            `;
+        }
+        
+        function setupUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+        
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('files', file);
+            }
+            
+            try {
+                const response = await fetch(`/api/projects/${projectId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    loadFiles();
+                    document.getElementById('fileInput').value = '';
+                } else {
+                    const error = await response.json();
+                    alert('上传失败: ' + (error.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                alert('上传失败，请重试');
+            }
+        }
+        
+        function downloadFile(filename) {
+            window.location.href = `/api/projects/${projectId}/download/${filename}`;
+        }
+        
+        async function deleteFile(filename) {
+            if (!confirm('确定要删除此文件吗？')) return;
+            
+            try {
+                await fetch(`/api/projects/${projectId}/files/${filename}`, { method: 'DELETE' });
+                loadFiles();
+            } catch (error) {
+                console.error('删除文件失败:', error);
+            }
+        }
+        
+        function exportAllFiles() {
+            window.location.href = `/api/projects/${projectId}/export`;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
